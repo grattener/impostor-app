@@ -20,8 +20,8 @@ export const GameOverPhase: React.FC<GameOverPhaseProps> = ({
 
 
   return (
-    <div className="flex flex-col h-full max-w-md mx-auto p-6 items-center justify-center animate-fade-in">
-      <div className="flex-1 flex flex-col items-center justify-center space-y-8 text-center w-full">
+    <div className="flex flex-col h-full w-full max-w-md mx-auto p-6 items-center justify-center animate-fade-in overflow-hidden">
+      <div className="flex-1 w-full overflow-y-auto custom-scrollbar flex flex-col items-center space-y-6 pt-4 pb-4">
 
         <div className={`p-6 rounded-full ${isImposterWin ? 'bg-red-500/20' : 'bg-emerald-500/20'}`}>
           {isImposterWin ? (
@@ -55,8 +55,8 @@ export const GameOverPhase: React.FC<GameOverPhaseProps> = ({
               <div
                 key={player.id}
                 className={`flex items-center justify-between p-3 rounded-lg border ${player.isImposter
-                    ? 'bg-red-900/20 border-red-900/50'
-                    : 'bg-slate-800 border-slate-700'
+                  ? 'bg-red-900/20 border-red-900/50'
+                  : 'bg-slate-800 border-slate-700'
                   } ${player.isEliminated ? 'opacity-50' : ''}`}
               >
                 <div className="flex items-center gap-3">
@@ -80,7 +80,9 @@ export const GameOverPhase: React.FC<GameOverPhaseProps> = ({
         </div>
       </div>
 
-      <div className="w-full pt-6">
+
+
+      <div className="w-full pt-4 shrink-0 bg-slate-900/90 backdrop-blur-sm z-10 border-t border-slate-800 mt-2">
         <Button fullWidth onClick={onRestart} className="h-14">
           <div className="flex items-center justify-center gap-2">
             <RefreshCw size={20} />
@@ -88,6 +90,6 @@ export const GameOverPhase: React.FC<GameOverPhaseProps> = ({
           </div>
         </Button>
       </div>
-    </div>
+    </div >
   );
 };
