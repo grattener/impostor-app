@@ -1,0 +1,5 @@
+{
+  "name": "El Impostor - Party Game",
+  "description": "Un juego de deducción social donde los ciudadanos deben encontrar al impostor. Incluye generación de palabras con IA y mecánica de pasar el teléfono.",
+  "requestFramePermissions": []
+}
