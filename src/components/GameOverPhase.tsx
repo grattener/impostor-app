@@ -17,12 +17,12 @@ export const GameOverPhase: React.FC<GameOverPhaseProps> = ({
   onRestart
 }) => {
   const isImposterWin = winner === 'IMPOSTERS';
-  const imposters = players.filter(p => p.isImposter);
+
 
   return (
     <div className="flex flex-col h-full max-w-md mx-auto p-6 items-center justify-center animate-fade-in">
       <div className="flex-1 flex flex-col items-center justify-center space-y-8 text-center w-full">
-        
+
         <div className={`p-6 rounded-full ${isImposterWin ? 'bg-red-500/20' : 'bg-emerald-500/20'}`}>
           {isImposterWin ? (
             <Skull className="w-20 h-20 text-red-500" />
@@ -32,14 +32,13 @@ export const GameOverPhase: React.FC<GameOverPhaseProps> = ({
         </div>
 
         <div className="space-y-2">
-          <h1 className={`text-4xl font-black uppercase tracking-tight ${
-            isImposterWin ? 'text-red-500' : 'text-emerald-500'
-          }`}>
+          <h1 className={`text-4xl font-black uppercase tracking-tight ${isImposterWin ? 'text-red-500' : 'text-emerald-500'
+            }`}>
             {isImposterWin ? 'Ganan los Impostores' : 'Ganan los Ciudadanos'}
           </h1>
           <p className="text-slate-400">
-            {isImposterWin 
-              ? 'Han logrado engañar a la mayoría.' 
+            {isImposterWin
+              ? 'Han logrado engañar a la mayoría.'
               : 'Han descubierto a todos los infiltrados.'}
           </p>
         </div>
@@ -53,13 +52,12 @@ export const GameOverPhase: React.FC<GameOverPhaseProps> = ({
           <h3 className="text-slate-400 text-sm font-bold uppercase ml-1">Identidades Reveladas</h3>
           <div className="space-y-2">
             {players.map(player => (
-              <div 
-                key={player.id} 
-                className={`flex items-center justify-between p-3 rounded-lg border ${
-                  player.isImposter 
-                    ? 'bg-red-900/20 border-red-900/50' 
+              <div
+                key={player.id}
+                className={`flex items-center justify-between p-3 rounded-lg border ${player.isImposter
+                    ? 'bg-red-900/20 border-red-900/50'
                     : 'bg-slate-800 border-slate-700'
-                } ${player.isEliminated ? 'opacity-50' : ''}`}
+                  } ${player.isEliminated ? 'opacity-50' : ''}`}
               >
                 <div className="flex items-center gap-3">
                   <span className="font-bold">{player.name}</span>

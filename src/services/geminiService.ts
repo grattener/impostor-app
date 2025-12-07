@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { GeminiWordResponse } from "../types";
+import { getRandomFallbackWord } from "../data/categories";
 
 const getGenAI = () => {
   const apiKey = import.meta.env.VITE_API_KEY || ''; // Fallback to empty string if undefined (or use a mock/placeholder if appropriate)
@@ -50,9 +51,9 @@ export const generateSecretWord = async (): Promise<GeminiWordResponse> => {
       return JSON.parse(response.text) as GeminiWordResponse;
     }
 
-    return { word: "Taco", category: "Comida" };
+    return getRandomFallbackWord();
   } catch (error) {
-    console.error("Error generating word with Gemini:", error);
-    return { word: "Bicicleta", category: "Transporte" };
+    console.warn("Error generating word with Gemini, using fallback:", error);
+    return getRandomFallbackWord();
   }
 };
