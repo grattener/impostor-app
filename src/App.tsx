@@ -37,7 +37,7 @@ export default function App() {
     <div className="w-full h-[100dvh] flex items-center justify-center p-0 md:p-4 overflow-hidden"
       style={{ backgroundColor: 'var(--bg-app)' }}
     >
-      <div className="w-full h-full md:h-[90vh] md:max-h-[850px] max-w-md bg-surface-primary md:rounded-apple-2xl md:shadow-apple-lg overflow-hidden flex flex-col relative transition-colors duration-300"
+      <div className="w-full h-full md:h-[90vh] md:max-h-[850px] md:max-w-md bg-surface-primary md:rounded-apple-2xl md:shadow-apple-lg overflow-hidden flex flex-col relative transition-colors duration-300"
         style={{
           paddingTop: 'env(safe-area-inset-top, 0px)',
           paddingBottom: 'env(safe-area-inset-bottom, 0px)',
