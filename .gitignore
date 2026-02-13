@@ -17,6 +17,7 @@ logs
 # local env files
 .env
 .env.*
+!.env.example
 *.local
 
 # test and coverage
