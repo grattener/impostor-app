@@ -244,7 +244,7 @@ export const SetupPhase: React.FC<SetupPhaseProps> = ({
               <div className="h-px bg-separator" />
 
               <div className="flex items-center justify-between py-2">
-                <div>
+                <div className={settings.mixedMode ? 'opacity-50' : ''}>
                   <span className="text-[15px] font-medium text-label-primary">Dificultad</span>
                   <span className="text-[13px] text-label-tertiary block mt-0.5">Complejidad de la palabra</span>
                 </div>
@@ -253,9 +253,10 @@ export const SetupPhase: React.FC<SetupPhaseProps> = ({
                     <button
                       key={d}
                       onClick={() => onUpdateSettings({ difficulty: d })}
-                      className={`px-3 py-1.5 rounded-apple text-[13px] font-medium transition-all ${settings.difficulty === d
+                      disabled={settings.mixedMode}
+                      className={`px-3 py-1.5 rounded-apple text-[13px] font-medium transition-all ${settings.difficulty === d && !settings.mixedMode
                         ? 'bg-accent-blue text-white'
-                        : 'bg-surface-secondary text-label-secondary hover:bg-surface-tertiary'
+                        : 'bg-surface-secondary text-label-secondary hover:bg-surface-tertiary disabled:opacity-50 disabled:cursor-not-allowed'
                         }`}
                     >
                       {difficultyLabels[d]}
@@ -263,6 +264,15 @@ export const SetupPhase: React.FC<SetupPhaseProps> = ({
                   ))}
                 </div>
               </div>
+
+              <div className="h-px bg-separator" />
+
+              <Toggle
+                enabled={settings.mixedMode}
+                onChange={(v) => onUpdateSettings({ mixedMode: v })}
+                label="Dificultad Variada"
+                description="Mezcla palabras fáciles y difíciles"
+              />
 
               <div className="h-px bg-separator" />
 

@@ -33,6 +33,7 @@ interface GenerateOptions {
   difficulty: 'easy' | 'normal' | 'hard';
   hintsEnabled: boolean;
   useApi: boolean;
+  mixedMode: boolean;
 }
 
 const DIFFICULTY_PROMPTS = {
@@ -42,16 +43,23 @@ const DIFFICULTY_PROMPTS = {
 };
 
 export const generateSecretWord = async (options: GenerateOptions): Promise<GeminiWordResponse> => {
+  // Determine effective difficulty
+  let effectiveDifficulty = options.difficulty;
+  if (options.mixedMode) {
+    // Combine Easy and Hard as requested
+    effectiveDifficulty = Math.random() < 0.5 ? 'easy' : 'hard';
+  }
+
   // If user chose offline mode, go straight to fallback
   if (!options.useApi) {
-    return getRandomFallbackWord(options.difficulty);
+    return getRandomFallbackWord(effectiveDifficulty);
   }
 
   try {
     const ai = getGenAI();
 
     if (!ai) {
-      return getRandomFallbackWord(options.difficulty);
+      return getRandomFallbackWord(effectiveDifficulty);
     }
 
     const themes = ["objetos cotidianos", "lugares", "profesiones", "comida", "hobbies", "tecnología", "naturaleza", "cine", "conceptos abstractos simples"];
@@ -88,7 +96,7 @@ export const generateSecretWord = async (options: GenerateOptions): Promise<Gemi
       
       Instrucciones:
       1. La palabra debe ser un sustantivo en Español.
-      2. ${DIFFICULTY_PROMPTS[options.difficulty]}
+      2. ${DIFFICULTY_PROMPTS[effectiveDifficulty]}
       3. Categoría sugerida para esta ronda (pero puedes cambiarla si se te ocurre algo mejor): ${randomTheme}.
       4. EVITA palabras demasiado genéricas como 'Cosa' o 'Lugar'.
       5. Sé creativo.
@@ -107,9 +115,9 @@ export const generateSecretWord = async (options: GenerateOptions): Promise<Gemi
       return JSON.parse(response.text) as GeminiWordResponse;
     }
 
-    return getRandomFallbackWord(options.difficulty);
+    return getRandomFallbackWord(effectiveDifficulty);
   } catch (error) {
     console.warn("Error generating word with Gemini, using fallback:", error);
-    return getRandomFallbackWord(options.difficulty);
+    return getRandomFallbackWord(effectiveDifficulty);
   }
 };
