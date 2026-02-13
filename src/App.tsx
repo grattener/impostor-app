@@ -1,4 +1,3 @@
-
 import { GamePhase } from './types';
 import { SetupPhase } from './components/SetupPhase';
 import { RoleDistributionPhase } from './components/RoleDistributionPhase';
@@ -6,21 +5,57 @@ import { GameRoundPhase } from './components/GameRoundPhase';
 import { VotingPhase } from './components/VotingPhase';
 import { GameOverPhase } from './components/GameOverPhase';
 import { useGameLogic } from './hooks/useGameLogic';
+import { useTheme } from './hooks/useTheme';
+import { useSound } from './hooks/useSound';
+import { useEffect, useRef } from 'react';
 
 export default function App() {
-  const { gameState, loading, eliminatedPlayerId, actions } = useGameLogic();
+  const { gameState, loading, eliminatedPlayerId, actions, apiStatus } = useGameLogic();
+  useTheme();
+  const { play } = useSound(gameState.settings.soundEnabled);
+  const prevPhaseRef = useRef(gameState.phase);
+
+  // Play sounds on phase transitions
+  useEffect(() => {
+    if (prevPhaseRef.current !== gameState.phase) {
+      switch (gameState.phase) {
+        case GamePhase.ROLE_DISTRIBUTION:
+          play('reveal');
+          break;
+        case GamePhase.VOTING:
+          play('vote');
+          break;
+        case GamePhase.GAME_OVER:
+          play(gameState.winner === 'CITIZENS' ? 'win' : 'lose');
+          break;
+      }
+      prevPhaseRef.current = gameState.phase;
+    }
+  }, [gameState.phase, gameState.winner, play]);
 
   return (
-    <div className="w-full h-[100dvh] bg-slate-900 text-slate-100 font-sans selection:bg-indigo-500/30 flex items-center justify-center p-0 md:p-4 overflow-hidden">
-      <div className="w-full h-full md:h-[90vh] md:max-h-[850px] max-w-md bg-slate-900 md:bg-slate-900/50 md:backdrop-blur-sm md:rounded-3xl md:shadow-2xl md:border md:border-slate-800 overflow-hidden flex flex-col relative">
+    <div className="w-full h-[100dvh] flex items-center justify-center p-0 md:p-4 overflow-hidden"
+      style={{ backgroundColor: 'var(--bg-app)' }}
+    >
+      <div className="w-full h-full md:h-[90vh] md:max-h-[850px] max-w-md bg-surface-primary md:rounded-apple-2xl md:shadow-apple-lg overflow-hidden flex flex-col relative transition-colors duration-300"
+        style={{
+          paddingTop: 'env(safe-area-inset-top, 0px)',
+          paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+          paddingLeft: 'env(safe-area-inset-left, 0px)',
+          paddingRight: 'env(safe-area-inset-right, 0px)',
+        }}
+      >
 
         {gameState.phase === GamePhase.SETUP && (
           <SetupPhase
             players={gameState.players}
+            settings={gameState.settings}
             onAddPlayer={actions.addPlayer}
             onRemovePlayer={actions.removePlayer}
             onStartGame={actions.startGame}
+            onUpdateSettings={actions.updateSettings}
             isGenerating={loading}
+            apiStatus={apiStatus}
           />
         )}
 
@@ -30,6 +65,8 @@ export default function App() {
             onNext={actions.nextDistribution}
             secretWord={gameState.secretWord}
             category={gameState.category}
+            hint={gameState.hint}
+            hintsEnabled={gameState.settings.hintsEnabled}
             isLastPlayer={gameState.currentPlayerIndex === gameState.players.length - 1}
           />
         )}
@@ -40,6 +77,8 @@ export default function App() {
             onGoToVote={actions.goToVote}
             roundCount={gameState.roundCount}
             maxRounds={gameState.maxRounds}
+            timerEnabled={gameState.settings.timerEnabled}
+            timerDuration={gameState.settings.timerDuration}
           />
         )}
 

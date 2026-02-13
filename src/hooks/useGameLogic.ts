@@ -1,19 +1,32 @@
 import { useState, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { GamePhase, GameState, Player } from '../types';
-import { generateSecretWord } from '../services/geminiService';
+import { GamePhase, GameState, GameSettings, Player, DEFAULT_SETTINGS } from '../types';
+import { generateSecretWord, checkApiStatus } from '../services/geminiService';
 
 const STORAGE_KEY = 'el_impostor_game_state';
+const SETTINGS_KEY = 'el_impostor_settings';
+
+const loadSettings = (): GameSettings => {
+    try {
+        const saved = localStorage.getItem(SETTINGS_KEY);
+        if (saved) return { ...DEFAULT_SETTINGS, ...JSON.parse(saved) };
+    } catch (e) {
+        console.error("Failed to load settings", e);
+    }
+    return DEFAULT_SETTINGS;
+};
 
 const INITIAL_STATE: GameState = {
     phase: GamePhase.SETUP,
     players: [],
     secretWord: '',
     category: '',
+    hint: '',
     currentPlayerIndex: 0,
     roundCount: 1,
     maxRounds: 3,
     winner: null,
+    settings: loadSettings(),
 };
 
 export const useGameLogic = () => {
@@ -21,7 +34,13 @@ export const useGameLogic = () => {
         try {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
-                return JSON.parse(saved);
+                const parsed = JSON.parse(saved);
+                // Ensure settings always exist
+                return {
+                    ...INITIAL_STATE,
+                    ...parsed,
+                    settings: { ...DEFAULT_SETTINGS, ...(parsed.settings || {}) },
+                };
             }
         } catch (e) {
             console.error("Failed to load saved game state", e);
@@ -33,10 +52,29 @@ export const useGameLogic = () => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(gameState));
     }, [gameState]);
 
+    // Persist settings separately for reuse across sessions
+    useEffect(() => {
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(gameState.settings));
+    }, [gameState.settings]);
+
     const [loading, setLoading] = useState(false);
     const [eliminatedPlayerId, setEliminatedPlayerId] = useState<string | null>(null);
+    const [apiStatus, setApiStatus] = useState<'checking' | 'available' | 'unavailable'>('checking');
 
-    // Helper to shuffle array (Fisher-Yates)
+    // Check API status on mount and when useApi changes
+    useEffect(() => {
+        if (!gameState.settings.useApi) {
+            setApiStatus('unavailable');
+            return;
+        }
+        const checkStatus = async () => {
+            setApiStatus('checking');
+            const isAvailable = await checkApiStatus();
+            setApiStatus(isAvailable ? 'available' : 'unavailable');
+        };
+        checkStatus();
+    }, [gameState.settings.useApi]);
+
     const shuffleArray = <T,>(array: T[]): T[] => {
         const newArray = [...array];
         for (let i = newArray.length - 1; i > 0; i--) {
@@ -66,25 +104,30 @@ export const useGameLogic = () => {
         }));
     };
 
+    const updateSettings = (updates: Partial<GameSettings>) => {
+        setGameState(prev => ({
+            ...prev,
+            settings: { ...prev.settings, ...updates },
+        }));
+    };
+
     const startGame = async (config: { imposterCount: number; maxRounds: number }) => {
         setLoading(true);
         try {
-            // 1. Generate Word
-            const { word, category } = await generateSecretWord();
+            const { word, category, hint } = await generateSecretWord({
+                difficulty: gameState.settings.difficulty,
+                hintsEnabled: gameState.settings.hintsEnabled,
+                useApi: gameState.settings.useApi,
+            });
 
-            // 2. Assign Roles
             let playersCopy = [...gameState.players];
-
-            // Reset roles
             playersCopy.forEach(p => {
                 p.isImposter = false;
                 p.isEliminated = false;
             });
 
-            // First shuffle to ensure base randomness
             playersCopy = shuffleArray(playersCopy);
 
-            // Pick random indices for impostors
             const totalPlayers = playersCopy.length;
             const indices = Array.from({ length: totalPlayers }, (_, i) => i);
             const shuffledIndices = shuffleArray(indices);
@@ -94,7 +137,6 @@ export const useGameLogic = () => {
                 playersCopy[index].isImposter = true;
             });
 
-            // Second shuffle: Ensure the distribution order is completely random
             playersCopy = shuffleArray(playersCopy);
 
             setGameState(prev => ({
@@ -102,6 +144,7 @@ export const useGameLogic = () => {
                 players: playersCopy,
                 secretWord: word,
                 category: category,
+                hint: hint || '',
                 phase: GamePhase.ROLE_DISTRIBUTION,
                 currentPlayerIndex: 0,
                 roundCount: 1,
@@ -122,8 +165,6 @@ export const useGameLogic = () => {
         if (nextIndex < gameState.players.length) {
             setGameState(prev => ({ ...prev, currentPlayerIndex: nextIndex }));
         } else {
-            // All roles distributed, start round
-            // Shuffle active players to randomize speaking order
             const activePlayers = gameState.players.filter(p => !p.isEliminated);
             const shuffledActive = shuffleArray(activePlayers);
 
@@ -144,12 +185,8 @@ export const useGameLogic = () => {
         const impostors = currentPlayers.filter(p => p.isImposter && !p.isEliminated);
         const citizens = currentPlayers.filter(p => !p.isImposter && !p.isEliminated);
 
-        if (impostors.length === 0) {
-            return 'CITIZENS';
-        }
-        if (impostors.length >= citizens.length) {
-            return 'IMPOSTERS';
-        }
+        if (impostors.length === 0) return 'CITIZENS';
+        if (impostors.length >= citizens.length) return 'IMPOSTERS';
         return null;
     };
 
@@ -161,9 +198,8 @@ export const useGameLogic = () => {
         let winner: 'CITIZENS' | 'IMPOSTERS' | null = checkWinConditions(updatedPlayers);
         setEliminatedPlayerId(playerId);
 
-        // If no standard win/loss, check round limit
         if (!winner && gameState.maxRounds && gameState.roundCount >= gameState.maxRounds) {
-            winner = 'IMPOSTERS'; // Time ran out for citizens
+            winner = 'IMPOSTERS';
         }
 
         if (winner) {
@@ -174,7 +210,6 @@ export const useGameLogic = () => {
                 phase: GamePhase.GAME_OVER
             }));
         } else {
-            // Game continues, new round
             setGameState(prev => ({
                 ...prev,
                 players: updatedPlayers,
@@ -185,17 +220,19 @@ export const useGameLogic = () => {
     };
 
     const restart = () => {
-        setGameState({
+        setGameState(prev => ({
             ...INITIAL_STATE,
             phase: GamePhase.SETUP,
-            players: gameState.players.map(p => ({ ...p, isImposter: false, isEliminated: false })),
+            players: prev.players.map(p => ({ ...p, isImposter: false, isEliminated: false })),
+            settings: prev.settings,
             secretWord: '',
             category: '',
+            hint: '',
             currentPlayerIndex: 0,
             roundCount: 1,
             maxRounds: 3,
             winner: null
-        });
+        }));
         setEliminatedPlayerId(null);
     };
 
@@ -203,6 +240,7 @@ export const useGameLogic = () => {
         gameState,
         loading,
         eliminatedPlayerId,
+        apiStatus,
         actions: {
             addPlayer,
             removePlayer,
@@ -210,7 +248,8 @@ export const useGameLogic = () => {
             nextDistribution,
             goToVote,
             eliminate,
-            restart
+            restart,
+            updateSettings,
         },
         setGameState
     };

@@ -2,30 +2,178 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root {
+/* ── Apple-inspired Design Tokens ── */
+:root {
+  /* Light mode (default) */
+  --surface-primary: #FFFFFF;
+  --surface-secondary: #F2F2F7;
+  --surface-tertiary: #E5E5EA;
+  --surface-elevated: #FFFFFF;
+
+  --label-primary: #000000;
+  --label-secondary: #3C3C43;
+  --label-tertiary: #8E8E93;
+
+  --separator: rgba(60, 60, 67, 0.12);
+
+  --fill-primary: rgba(120, 120, 128, 0.2);
+  --fill-secondary: rgba(120, 120, 128, 0.16);
+  --fill-tertiary: rgba(120, 120, 128, 0.12);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+
+  --bg-app: #F5F5F7;
+}
+
+.dark {
+  --surface-primary: #1C1C1E;
+  --surface-secondary: #2C2C2E;
+  --surface-tertiary: #3A3A3C;
+  --surface-elevated: #2C2C2E;
+
+  --label-primary: #FFFFFF;
+  --label-secondary: rgba(235, 235, 245, 0.6);
+  --label-tertiary: rgba(235, 235, 245, 0.3);
+
+  --separator: rgba(84, 84, 88, 0.65);
+
+  --fill-primary: rgba(120, 120, 128, 0.36);
+  --fill-secondary: rgba(120, 120, 128, 0.32);
+  --fill-tertiary: rgba(120, 120, 128, 0.24);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.45);
+
+  --bg-app: #000000;
+}
+
+/* ── Base Styles ── */
+html,
+body,
+#root {
   height: 100dvh;
   max-height: 100dvh;
   margin: 0;
   padding: 0;
-  overflow: hidden; /* Let the App container handle scrolling */
+  overflow: hidden;
+  /* Prevent pull-to-refresh on mobile */
+  overscroll-behavior: none;
+}
+
+html {
+  /* Prevent iOS zoom on input focus (font-size >= 16px handles it in inputs) */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
-  background-color: #0f172a; /* Slate 900 */
-  color: #f8fafc; /* Slate 50 */
+  background-color: var(--bg-app);
+  color: var(--label-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'kern' 1;
+  text-rendering: optimizeLegibility;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  /* Suppress blue tap highlight on mobile */
+  -webkit-tap-highlight-color: transparent;
+  /* Prevent text selection on game UI (buttons, cards) */
+  -webkit-user-select: none;
+  user-select: none;
+  /* Smooth touch scrolling */
+  -webkit-overflow-scrolling: touch;
 }
 
-/* Custom Scrollbar for lists */
+/* Allow text selection only in text inputs */
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* ── Apple-style Focus Rings ── */
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.4);
+  border-radius: inherit;
+}
+
+/* ── Scrollbar ── */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+  width: 4px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: rgba(30, 41, 59, 0.5); 
+  background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(71, 85, 105, 0.8); 
+  background: var(--fill-tertiary);
   border-radius: 10px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(100, 116, 139, 1); 
+  background: var(--fill-secondary);
+}
+
+/* ── iOS-style Toggle ── */
+.toggle-switch {
+  position: relative;
+  width: 51px;
+  height: 31px;
+  background: var(--fill-primary);
+  border-radius: 15.5px;
+  transition: background-color 0.25s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.toggle-switch.active {
+  background-color: #34C759;
+}
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  background: white;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15), 0 0 1px rgba(0, 0, 0, 0.06);
+  transition: transform 0.25s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.toggle-switch.active::after {
+  transform: translateX(20px);
+}
+
+/* ── Tap Animation for interactive elements ── */
+.tap-effect {
+  transition: transform 0.15s cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.tap-effect:active {
+  transform: scale(0.97);
+}
+
+/* ── Phase transition ── */
+.phase-enter {
+  animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ── Card Styles ── */
+.card {
+  background-color: var(--surface-elevated);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--separator);
+}
+
+/* ── Timer ring ── */
+.timer-ring-bg {
+  stroke: var(--fill-tertiary);
 }

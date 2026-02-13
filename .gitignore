@@ -35,6 +35,10 @@ logs
 *.sw?
 .DS_Store
 
+# Apple Color Emoji font (180MB, not for distribution)
+*.ttc
+extract_emojis.py
+
 # temp files
 *.tmp
 *.bak

@@ -1,35 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, Play, Trash2, Plus, Minus } from 'lucide-react';
-import { Player } from '../types';
+import { Plus, Minus, X, Play, UserPlus } from 'lucide-react';
+import { Player, GameSettings } from '../types';
+import { Emoji } from './Emoji';
 import { Button } from './Button';
+import { Toggle } from './Toggle';
 
 interface SetupPhaseProps {
   players: Player[];
+  settings: GameSettings;
   onAddPlayer: (name: string) => void;
   onRemovePlayer: (id: string) => void;
   onStartGame: (config: { imposterCount: number; maxRounds: number }) => void;
+  onUpdateSettings: (updates: Partial<GameSettings>) => void;
   isGenerating: boolean;
+  apiStatus: 'checking' | 'available' | 'unavailable';
 }
 
 export const SetupPhase: React.FC<SetupPhaseProps> = ({
   players,
+  settings,
   onAddPlayer,
   onRemovePlayer,
   onStartGame,
-  isGenerating
+  onUpdateSettings,
+  isGenerating,
+  apiStatus
 }) => {
   const [newName, setNewName] = useState('');
-  
-  // Config state
   const [imposterCount, setImposterCount] = useState(1);
   const [maxRounds, setMaxRounds] = useState(3);
+  const [showSettings, setShowSettings] = useState(false);
 
-  // Adjust imposter count based on player count limits
   useEffect(() => {
-    const maxPossibleImposters = Math.max(1, Math.floor((players.length - 1) / 2));
-    if (imposterCount > maxPossibleImposters) {
-      setImposterCount(maxPossibleImposters);
-    }
+    const maxPossible = Math.max(1, Math.floor((players.length - 1) / 2));
+    if (imposterCount > maxPossible) setImposterCount(maxPossible);
   }, [players.length, imposterCount]);
 
   const handleAdd = (e: React.FormEvent) => {
@@ -47,154 +51,256 @@ export const SetupPhase: React.FC<SetupPhaseProps> = ({
   const maxPossibleImposters = Math.max(1, Math.floor((players.length - 1) / 2));
   const canStart = players.length >= 3;
 
-  return (
-    <div className="flex flex-col h-full w-full p-5 gap-3">
-      {/* Header */}
-      <div className="text-center space-y-1 mt-2 shrink-0">
-        <div className="inline-flex p-3 bg-indigo-500/10 rounded-full mb-1 ring-1 ring-indigo-500/20">
-          <Users className="w-8 h-8 text-indigo-400" />
-        </div>
-        <h1 className="text-3xl font-black tracking-tight text-white leading-tight">
-          El <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">Impostor</span>
-        </h1>
-        <p className="text-slate-400 text-sm font-medium">Configura la partida</p>
-      </div>
+  const difficultyLabels = { easy: 'Fácil', normal: 'Normal', hard: 'Difícil' };
 
-      {/* Player Input */}
-      <form onSubmit={handleAdd} className="flex gap-2 shrink-0 w-full">
-        <div className="relative flex-1">
+  return (
+    <div className="flex flex-col h-full w-full phase-enter overflow-hidden">
+      {/* Scrollable content */}
+      <div className="flex-1 overflow-y-auto custom-scrollbar p-5 pb-0 space-y-4 min-h-0">
+        {/* Header */}
+        <div className="text-center pt-4 pb-2 shrink-0 relative">
+          <div className="absolute top-0 right-0 flex items-center gap-1.5 opacity-70 hover:opacity-100 transition-opacity">
+            <div className={`w-2 h-2 rounded-full ${apiStatus === 'available' ? 'bg-accent-green' :
+              apiStatus === 'checking' ? 'bg-accent-orange animate-pulse' :
+                'bg-accent-red'
+              }`} />
+            <span className="text-[10px] font-medium text-label-tertiary uppercase tracking-wider">
+              {apiStatus === 'available' ? 'API OK' :
+                apiStatus === 'checking' ? 'Conectando...' :
+                  'Modo Offline'}
+            </span>
+          </div>
+          <div className="mb-3"><Emoji name="detective" size={56} /></div>
+          <h1 className="text-[28px] font-bold tracking-tight text-label-primary">
+            El Impostor
+          </h1>
+          <p className="text-[15px] text-label-tertiary mt-1">Configura tu partida</p>
+        </div>
+
+        {/* Player Input */}
+        <form onSubmit={handleAdd} className="flex gap-2 shrink-0">
           <input
             type="text"
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Nombre del jugador"
-            className="w-full bg-slate-800 border-2 border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 transition-all"
+            className="flex-1 bg-surface-secondary border border-separator rounded-apple px-4 py-3 text-label-primary placeholder-label-tertiary text-[16px] focus:outline-none focus:ring-2 focus:ring-accent-blue/40 transition-all"
             autoFocus
           />
-        </div>
-        <Button type="submit" variant="secondary" disabled={!newName.trim()} className="px-4 shrink-0">
-          <UserPlus size={24} />
-        </Button>
-      </form>
+          <Button type="submit" variant="primary" disabled={!newName.trim()} className="px-4">
+            <UserPlus size={20} />
+          </Button>
+        </form>
 
-      {/* Player List */}
-      <div className="flex-1 bg-slate-800/30 rounded-xl border border-slate-700/50 p-2 overflow-hidden flex flex-col min-h-0 relative">
-        <div className="overflow-y-auto flex-1 custom-scrollbar space-y-2 p-1">
-          {players.length === 0 && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-slate-500 space-y-3 opacity-60">
-              <Users size={40} className="text-slate-600" />
-              <p className="text-sm font-medium">Agrega al menos 3 jugadores</p>
+        {/* Player List */}
+        <div className="card p-1 overflow-hidden flex flex-col" style={{ minHeight: players.length > 0 ? '120px' : '100px', maxHeight: '240px' }}>
+          <div className="overflow-y-auto flex-1 custom-scrollbar space-y-1 p-1">
+            {players.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-full text-label-tertiary space-y-2 py-8">
+                <Emoji name="people" size={40} />
+                <p className="text-[14px] font-medium">Agrega al menos 3 jugadores</p>
+              </div>
+            )}
+            {players.map((player, index) => (
+              <div
+                key={player.id}
+                className="flex items-center justify-between px-4 py-3 rounded-apple bg-surface-primary hover:bg-surface-secondary transition-colors animate-fade-in group"
+                style={{ animationDelay: `${index * 50}ms` }}
+              >
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <div className="w-8 h-8 rounded-full bg-accent-blue/15 text-accent-blue flex items-center justify-center text-[14px] font-semibold shrink-0">
+                    {player.name.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-[16px] font-medium text-label-primary truncate">{player.name}</span>
+                </div>
+                <button
+                  onClick={() => onRemovePlayer(player.id)}
+                  className="p-2 text-label-tertiary hover:text-accent-red rounded-full hover:bg-accent-red/10 transition-colors shrink-0"
+                  aria-label="Eliminar jugador"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            ))}
+          </div>
+          {players.length > 0 && (
+            <div className="text-[13px] text-label-tertiary text-center py-2 border-t border-separator">
+              {players.length} jugador{players.length !== 1 ? 'es' : ''}
             </div>
           )}
-          {players.map((player) => (
-            <div 
-              key={player.id} 
-              className="flex items-center justify-between bg-slate-800 p-3 rounded-lg border border-slate-700 shadow-sm animate-fade-in group hover:border-slate-600 transition-colors"
-            >
-              <div className="flex items-center gap-3 overflow-hidden">
-                <div className="w-8 h-8 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-sm font-bold border border-indigo-500/30 shrink-0">
-                  {player.name.charAt(0).toUpperCase()}
-                </div>
-                <span className="font-semibold text-slate-200 truncate">{player.name}</span>
-              </div>
-              <button 
-                onClick={() => onRemovePlayer(player.id)}
-                className="p-2 text-slate-500 hover:text-red-400 hover:bg-red-400/10 rounded-lg transition-colors shrink-0"
-                aria-label="Eliminar jugador"
+        </div>
+
+        {/* Game Config & Settings */}
+        <div className="card p-4 shrink-0 space-y-3">
+          {/* Imposters & Rounds */}
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-[15px] font-medium text-label-primary">Impostores</span>
+              <span className="text-[13px] text-label-tertiary ml-2">máx. {maxPossibleImposters}</span>
+            </div>
+            <div className="flex items-center gap-2 bg-surface-secondary rounded-apple p-1">
+              <button
+                onClick={() => setImposterCount(Math.max(1, imposterCount - 1))}
+                disabled={imposterCount <= 1}
+                className="w-10 h-10 flex items-center justify-center rounded-[10px] hover:bg-surface-tertiary disabled:opacity-30 text-label-primary transition-colors"
               >
-                <Trash2 size={18} />
+                <Minus size={15} />
+              </button>
+              <span className="font-semibold text-[17px] w-5 text-center text-accent-blue tabular-nums">{imposterCount}</span>
+              <button
+                onClick={() => setImposterCount(Math.min(maxPossibleImposters, imposterCount + 1))}
+                disabled={imposterCount >= maxPossibleImposters}
+                className="w-10 h-10 flex items-center justify-center rounded-[10px] hover:bg-surface-tertiary disabled:opacity-30 text-label-primary transition-colors"
+              >
+                <Plus size={15} />
               </button>
             </div>
-          ))}
+          </div>
+
+          <div className="h-px bg-separator" />
+
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-[15px] font-medium text-label-primary">Rondas</span>
+              <span className="text-[13px] text-label-tertiary ml-2">límite</span>
+            </div>
+            <div className="flex items-center gap-2 bg-surface-secondary rounded-apple p-1">
+              <button
+                onClick={() => setMaxRounds(Math.max(1, maxRounds - 1))}
+                disabled={maxRounds <= 1}
+                className="w-10 h-10 flex items-center justify-center rounded-[10px] hover:bg-surface-tertiary disabled:opacity-30 text-label-primary transition-colors"
+              >
+                <Minus size={15} />
+              </button>
+              <span className="font-semibold text-[17px] w-5 text-center text-accent-blue tabular-nums">{maxRounds}</span>
+              <button
+                onClick={() => setMaxRounds(Math.min(10, maxRounds + 1))}
+                disabled={maxRounds >= 10}
+                className="w-10 h-10 flex items-center justify-center rounded-[10px] hover:bg-surface-tertiary disabled:opacity-30 text-label-primary transition-colors"
+              >
+                <Plus size={15} />
+              </button>
+            </div>
+          </div>
+
+          <div className="h-px bg-separator" />
+
+          {/* More Settings Toggle */}
+          <button
+            onClick={() => setShowSettings(!showSettings)}
+            className="w-full text-[15px] font-medium text-accent-blue py-1 text-center tap-effect"
+          >
+            {showSettings ? 'Ocultar opciones' : 'Más opciones'}
+          </button>
+
+          {/* Extended Settings */}
+          {showSettings && (
+            <div className="space-y-1 animate-fade-in pt-1">
+              <Toggle
+                enabled={settings.hintsEnabled}
+                onChange={(v) => onUpdateSettings({ hintsEnabled: v })}
+                label="Pista para impostor"
+                description="El impostor recibe una pista sutil"
+              />
+
+              <div className="h-px bg-separator" />
+
+              <Toggle
+                enabled={settings.timerEnabled}
+                onChange={(v) => onUpdateSettings({ timerEnabled: v })}
+                label="Temporizador"
+                description="Tiempo límite por ronda de debate"
+              />
+
+              {settings.timerEnabled && (
+                <div className="flex items-center justify-between pl-1 pb-1 animate-fade-in">
+                  <span className="text-[13px] text-label-secondary">Duración</span>
+                  <div className="flex gap-1">
+                    {[30, 60, 90, 120].map(sec => (
+                      <button
+                        key={sec}
+                        onClick={() => onUpdateSettings({ timerDuration: sec })}
+                        className={`px-3 py-1.5 rounded-apple text-[13px] font-medium transition-all ${settings.timerDuration === sec
+                          ? 'bg-accent-blue text-white'
+                          : 'bg-surface-secondary text-label-secondary hover:bg-surface-tertiary'
+                          }`}
+                      >
+                        {sec}s
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="h-px bg-separator" />
+
+              <Toggle
+                enabled={settings.soundEnabled}
+                onChange={(v) => onUpdateSettings({ soundEnabled: v })}
+                label="Sonidos"
+                description="Efectos de sonido del juego"
+              />
+
+              <div className="h-px bg-separator" />
+
+              <div className="flex items-center justify-between py-2">
+                <div>
+                  <span className="text-[15px] font-medium text-label-primary">Dificultad</span>
+                  <span className="text-[13px] text-label-tertiary block mt-0.5">Complejidad de la palabra</span>
+                </div>
+                <div className="flex gap-1">
+                  {(['easy', 'normal', 'hard'] as const).map(d => (
+                    <button
+                      key={d}
+                      onClick={() => onUpdateSettings({ difficulty: d })}
+                      className={`px-3 py-1.5 rounded-apple text-[13px] font-medium transition-all ${settings.difficulty === d
+                        ? 'bg-accent-blue text-white'
+                        : 'bg-surface-secondary text-label-secondary hover:bg-surface-tertiary'
+                        }`}
+                    >
+                      {difficultyLabels[d]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="h-px bg-separator" />
+
+              <Toggle
+                enabled={settings.useApi}
+                onChange={(v) => onUpdateSettings({ useApi: v })}
+                label="Usar API (Gemini)"
+                description="Genera palabras con IA. Si no, usa lista local"
+              />
+            </div>
+          )}
         </div>
-        {players.length > 0 && (
-           <div className="pt-2 px-2 text-xs text-slate-500 text-center border-t border-slate-700/50 mt-1 shrink-0">
-             Total: {players.length} jugadores
-           </div>
-        )}
-      </div>
+      </div> {/* End scrollable content */}
 
-      {/* Game Config Settings */}
-      <div className="bg-slate-800 p-4 rounded-xl border border-slate-700 shadow-lg shrink-0 flex flex-col gap-3">
-        
-        {/* Imposter Control */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex flex-col min-w-0">
-            <span className="text-sm font-bold text-slate-200">Impostores</span>
-            <span className="text-xs text-slate-500 truncate">Máximo: {maxPossibleImposters}</span>
-          </div>
-          <div className="flex items-center gap-2 bg-slate-900 rounded-lg p-1 border border-slate-700 shrink-0">
-            <button 
-              onClick={() => setImposterCount(Math.max(1, imposterCount - 1))}
-              disabled={imposterCount <= 1}
-              className="w-8 h-8 flex items-center justify-center hover:bg-slate-800 rounded-md disabled:opacity-30 disabled:hover:bg-transparent text-white transition-colors"
-            >
-              <Minus size={16} />
-            </button>
-            <span className="font-bold text-lg w-6 text-center text-indigo-400 select-none">{imposterCount}</span>
-            <button 
-              onClick={() => setImposterCount(Math.min(maxPossibleImposters, imposterCount + 1))}
-              disabled={imposterCount >= maxPossibleImposters}
-              className="w-8 h-8 flex items-center justify-center hover:bg-slate-800 rounded-md disabled:opacity-30 disabled:hover:bg-transparent text-white transition-colors"
-            >
-              <Plus size={16} />
-            </button>
-          </div>
-        </div>
-
-        {/* Separator */}
-        <div className="h-px bg-slate-700/50 w-full" />
-
-        {/* Round Control */}
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex flex-col min-w-0">
-             <span className="text-sm font-bold text-slate-200">Rondas Límite</span>
-             <span className="text-xs text-slate-500 truncate">Impostores ganan al final</span>
-          </div>
-          <div className="flex items-center gap-2 bg-slate-900 rounded-lg p-1 border border-slate-700 shrink-0">
-            <button 
-              onClick={() => setMaxRounds(Math.max(1, maxRounds - 1))}
-              disabled={maxRounds <= 1}
-              className="w-8 h-8 flex items-center justify-center hover:bg-slate-800 rounded-md disabled:opacity-30 disabled:hover:bg-transparent text-white transition-colors"
-            >
-              <Minus size={16} />
-            </button>
-            <span className="font-bold text-lg w-6 text-center text-indigo-400 select-none">{maxRounds}</span>
-            <button 
-              onClick={() => setMaxRounds(Math.min(10, maxRounds + 1))}
-              disabled={maxRounds >= 10}
-              className="w-8 h-8 flex items-center justify-center hover:bg-slate-800 rounded-md disabled:opacity-30 disabled:hover:bg-transparent text-white transition-colors"
-            >
-              <Plus size={16} />
-            </button>
-          </div>
-        </div>
-
-      </div>
-
-      <div className="pt-1 shrink-0">
-        <Button 
-          fullWidth 
-          onClick={handleStart} 
+      {/* Start Button - Fixed at bottom */}
+      <div className="shrink-0 p-5 pt-3">
+        <Button
+          fullWidth
+          size="lg"
+          onClick={handleStart}
           disabled={!canStart || isGenerating}
           variant={canStart ? 'primary' : 'secondary'}
-          className="h-14 shadow-lg shadow-indigo-500/10"
         >
           {isGenerating ? (
-            <span className="flex items-center justify-center gap-2">
-              <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></span>
+            <span className="flex items-center gap-2">
+              <span className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white" />
               Generando...
             </span>
           ) : (
-            <span className="flex items-center justify-center gap-2 text-lg font-bold">
-              <Play size={24} fill="currentColor" />
+            <span className="flex items-center gap-2">
+              <Play size={20} fill="currentColor" />
               Comenzar Partida
             </span>
           )}
         </Button>
         {!canStart && players.length > 0 && (
-          <p className="text-center text-xs text-slate-500 mt-2 font-medium animate-pulse">
-            Faltan {3 - players.length} jugadores para empezar
+          <p className="text-center text-[13px] text-label-tertiary mt-2">
+            Faltan {3 - players.length} jugador{3 - players.length !== 1 ? 'es' : ''} para empezar
           </p>
         )}
       </div>
