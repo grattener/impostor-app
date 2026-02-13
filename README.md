@@ -65,6 +65,31 @@ La palabra secreta se genera dinámicamente utilizando la **API de Gemini de Goo
     ```
     Abre tu navegador y ve a `http://localhost:5173` (o la URL que se muestra en tu terminal).
 
+## 📱 Aplicación Móvil (Android)
+
+Este proyecto está configurado con **Capacitor** para generar una aplicación Android.
+
+### Generar APK localmente
+
+1.  **Sincronizar cambios:**
+    ```bash
+    npx cap sync
+    ```
+
+2.  **Abrir en Android Studio:**
+    ```bash
+    npx cap open android
+    ```
+    Desde Android Studio, puedes ejecutar la app en un emulador o dispositivo conectado.
+
+### Generar APK con GitHub Actions
+
+Cada vez que haces un push a la rama `main`, se ejecuta un flujo de trabajo que:
+
+1.  Instala dependencias y construye el proyecto.
+2.  Genera el APK de depuración (`app-debug.apk`).
+3.  Lo sube como un "Artifact" que puedes descargar desde la pestaña "Actions" en GitHub.
+
 ---
 
 Desarrollado con ❤️ por [grattener](https://github.com/grattener)
