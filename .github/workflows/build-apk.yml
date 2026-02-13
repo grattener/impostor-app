@@ -34,14 +34,24 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
+      - name: Accept Android SDK Licenses
+        run: |
+          mkdir -p "$ANDROID_HOME/licenses" || mkdir -p "$ANDROID_SDK_ROOT/licenses"
+          LICENSES_DIR="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}/licenses"
+          mkdir -p "$LICENSES_DIR"
+          echo -e "\n24333f8a63b6825ea9c5514f83c2829b004d1fee" > "$LICENSES_DIR/android-sdk-license"
+          echo -e "\n84831b9409646a918e30573bab4c9c91346d8abd" > "$LICENSES_DIR/android-sdk-preview-license"
+          echo -e "\n33b6a2b64607f11b759f320ef9dff4ae5c47d97a" >> "$LICENSES_DIR/android-sdk-license"
+          echo -e "\nd975f751698a77e662f1cd748a3e6214bff89f2f" >> "$LICENSES_DIR/android-sdk-license"
+          echo -e "\nd56f5187479451eabf01fb78af6dfcb131a6481e" > "$LICENSES_DIR/android-googletv-license"
+          echo -e "\ne9acab5b5fbb560a72797e95dcb093e1e9d09026" > "$LICENSES_DIR/android-sdk-arm-dbt-license"
+          echo -e "\nd0d06d83319c69b37c6eeb2ea69fcf711d0aad60" > "$LICENSES_DIR/android-googlexr-license"
+          echo -e "\n33b6a2b64607f11b759f320ef9dff4ae5c47d97a" > "$LICENSES_DIR/google-gdk-license"
+
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
         with:
           accept-android-sdk-licenses: false
-
-      - name: Accept Android Licenses
-        run: |
-          yes | sdkmanager --licenses || true
 
       - name: Sync Capacitor
         run: npx cap sync android
