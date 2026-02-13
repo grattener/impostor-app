@@ -243,36 +243,72 @@ export const SetupPhase: React.FC<SetupPhaseProps> = ({
 
               <div className="h-px bg-separator" />
 
-              <div className="flex items-center justify-between py-2">
-                <div className={settings.mixedMode ? 'opacity-50' : ''}>
-                  <span className="text-[15px] font-medium text-label-primary">Dificultad</span>
-                  <span className="text-[13px] text-label-tertiary block mt-0.5">Complejidad de la palabra</span>
+              <div className="space-y-3 pt-2">
+                <div>
+                  <span className="text-[15px] font-medium text-label-primary">Modo de Dificultad</span>
+                  <span className="text-[13px] text-label-tertiary block mt-0.5">Cómo se eligen las palabras</span>
                 </div>
-                <div className="flex gap-1">
-                  {(['easy', 'normal', 'hard'] as const).map(d => (
-                    <button
-                      key={d}
-                      onClick={() => onUpdateSettings({ difficulty: d })}
-                      disabled={settings.mixedMode}
-                      className={`px-3 py-1.5 rounded-apple text-[13px] font-medium transition-all ${settings.difficulty === d && !settings.mixedMode
-                        ? 'bg-accent-blue text-white'
-                        : 'bg-surface-secondary text-label-secondary hover:bg-surface-tertiary disabled:opacity-50 disabled:cursor-not-allowed'
-                        }`}
-                    >
-                      {difficultyLabels[d]}
-                    </button>
-                  ))}
+
+                <div className="grid grid-cols-1 gap-2">
+                  <button
+                    onClick={() => onUpdateSettings({ difficultyMode: 'manual' })}
+                    className={`flex items-center justify-between p-3 rounded-apple transition-all border ${settings.difficultyMode === 'manual'
+                        ? 'bg-accent-blue/10 border-accent-blue text-accent-blue'
+                        : 'bg-surface-secondary border-transparent text-label-secondary hover:bg-surface-tertiary'
+                      }`}
+                  >
+                    <span className="text-[14px] font-medium">Manual</span>
+                    {settings.difficultyMode === 'manual' && <Emoji name="checkmark" size={16} />}
+                  </button>
+
+                  {settings.difficultyMode === 'manual' && (
+                    <div className="flex gap-1 pl-4 animate-fade-in">
+                      {(['easy', 'normal', 'hard'] as const).map(d => (
+                        <button
+                          key={d}
+                          onClick={() => onUpdateSettings({ difficulty: d })}
+                          className={`flex-1 px-3 py-2 rounded-apple text-[13px] font-medium transition-all ${settings.difficulty === d
+                            ? 'bg-accent-blue text-white shadow-sm'
+                            : 'bg-surface-tertiary text-label-secondary hover:bg-surface-secondary'
+                            }`}
+                        >
+                          {difficultyLabels[d]}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => onUpdateSettings({ difficultyMode: 'easy_hard' })}
+                    className={`flex items-center justify-between p-3 rounded-apple transition-all border ${settings.difficultyMode === 'easy_hard'
+                        ? 'bg-accent-blue/10 border-accent-blue text-accent-blue'
+                        : 'bg-surface-secondary border-transparent text-label-secondary hover:bg-surface-tertiary'
+                      }`}
+                  >
+                    <div className="text-left">
+                      <span className="text-[14px] font-medium block">Variada (Recomendada)</span>
+                      <span className="text-[11px] opacity-80">Mezcla palabras Fáciles y Difíciles</span>
+                    </div>
+                    {settings.difficultyMode === 'easy_hard' && <Emoji name="checkmark" size={16} />}
+                  </button>
+
+                  <button
+                    onClick={() => onUpdateSettings({ difficultyMode: 'all' })}
+                    className={`flex items-center justify-between p-3 rounded-apple transition-all border ${settings.difficultyMode === 'all'
+                        ? 'bg-accent-blue/10 border-accent-blue text-accent-blue'
+                        : 'bg-surface-secondary border-transparent text-label-secondary hover:bg-surface-tertiary'
+                      }`}
+                  >
+                    <div className="text-left">
+                      <span className="text-[14px] font-medium block">Aleatoria Total</span>
+                      <span className="text-[11px] opacity-80">Cualquier dificultad (Fácil/Normal/Difícil)</span>
+                    </div>
+                    {settings.difficultyMode === 'all' && <Emoji name="checkmark" size={16} />}
+                  </button>
                 </div>
               </div>
 
-              <div className="h-px bg-separator" />
 
-              <Toggle
-                enabled={settings.mixedMode}
-                onChange={(v) => onUpdateSettings({ mixedMode: v })}
-                label="Dificultad Variada"
-                description="Mezcla palabras fáciles y difíciles"
-              />
 
               <div className="h-px bg-separator" />
 

@@ -118,7 +118,7 @@ export const useGameLogic = () => {
                 difficulty: gameState.settings.difficulty,
                 hintsEnabled: gameState.settings.hintsEnabled,
                 useApi: gameState.settings.useApi,
-                mixedMode: gameState.settings.mixedMode,
+                difficultyMode: gameState.settings.difficultyMode,
             });
 
             let playersCopy = [...gameState.players];

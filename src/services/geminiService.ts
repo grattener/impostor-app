@@ -33,7 +33,7 @@ interface GenerateOptions {
   difficulty: 'easy' | 'normal' | 'hard';
   hintsEnabled: boolean;
   useApi: boolean;
-  mixedMode: boolean;
+  difficultyMode: 'manual' | 'easy_hard' | 'all';
 }
 
 const DIFFICULTY_PROMPTS = {
@@ -43,11 +43,14 @@ const DIFFICULTY_PROMPTS = {
 };
 
 export const generateSecretWord = async (options: GenerateOptions): Promise<GeminiWordResponse> => {
-  // Determine effective difficulty
+  // Determine effective difficulty based on mode
   let effectiveDifficulty = options.difficulty;
-  if (options.mixedMode) {
-    // Combine Easy and Hard as requested
+
+  if (options.difficultyMode === 'easy_hard') {
     effectiveDifficulty = Math.random() < 0.5 ? 'easy' : 'hard';
+  } else if (options.difficultyMode === 'all') {
+    const rand = Math.random();
+    effectiveDifficulty = rand < 0.33 ? 'easy' : rand < 0.66 ? 'normal' : 'hard';
   }
 
   // If user chose offline mode, go straight to fallback

@@ -21,7 +21,7 @@ export interface GameSettings {
   difficulty: 'easy' | 'normal' | 'hard';
   soundEnabled: boolean;
   useApi: boolean;
-  mixedMode: boolean;
+  difficultyMode: 'manual' | 'easy_hard' | 'all';
 }
 
 export const DEFAULT_SETTINGS: GameSettings = {
@@ -31,7 +31,7 @@ export const DEFAULT_SETTINGS: GameSettings = {
   difficulty: 'normal',
   soundEnabled: true,
   useApi: true,
-  mixedMode: true,
+  difficultyMode: 'easy_hard',
 };
 
 export interface GameState {
