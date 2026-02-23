@@ -27,6 +27,7 @@ const INITIAL_STATE: GameState = {
     maxRounds: 3,
     winner: null,
     settings: loadSettings(),
+    lastImposterIds: [],
 };
 
 export const useGameLogic = () => {
@@ -127,17 +128,47 @@ export const useGameLogic = () => {
                 p.isEliminated = false;
             });
 
-            playersCopy = shuffleArray(playersCopy);
+            // Weighted random selection to reduce streaks while maintaining unpredictability
+            const getNewImposterIds = (count: number): string[] => {
+                const selectedIds: string[] = [];
+                const pool = [...playersCopy];
+                
+                for (let n = 0; n < count; n++) {
+                    if (pool.length === 0) break;
 
-            const totalPlayers = playersCopy.length;
-            const indices = Array.from({ length: totalPlayers }, (_, i) => i);
-            const shuffledIndices = shuffleArray(indices);
-            const impostorIndices = shuffledIndices.slice(0, config.imposterCount);
+                    // Assign weights: 1 for last imposters, 10 for everyone else
+                    const weightedPool = pool.map(p => ({
+                        id: p.id,
+                        weight: gameState.lastImposterIds.includes(p.id) ? 1 : 10
+                    }));
 
-            impostorIndices.forEach(index => {
-                playersCopy[index].isImposter = true;
+                    const totalWeight = weightedPool.reduce((sum, item) => sum + item.weight, 0);
+                    let random = Math.random() * totalWeight;
+                    
+                    for (let i = 0; i < weightedPool.length; i++) {
+                        random -= weightedPool[i].weight;
+                        if (random <= 0) {
+                            const selectedId = weightedPool[i].id;
+                            selectedIds.push(selectedId);
+                            // Remove selected player from the local pool for next imposter (if count > 1)
+                            const indexToRemove = pool.findIndex(p => p.id === selectedId);
+                            pool.splice(indexToRemove, 1);
+                            break;
+                        }
+                    }
+                }
+                return selectedIds;
+            };
+
+            const newImposterIds = getNewImposterIds(config.imposterCount);
+
+            playersCopy.forEach(p => {
+                if (newImposterIds.includes(p.id)) {
+                    p.isImposter = true;
+                }
             });
 
+            // Shuffle entire player list for distribution phase
             playersCopy = shuffleArray(playersCopy);
 
             setGameState(prev => ({
@@ -150,7 +181,8 @@ export const useGameLogic = () => {
                 currentPlayerIndex: 0,
                 roundCount: 1,
                 maxRounds: config.maxRounds,
-                winner: null
+                winner: null,
+                lastImposterIds: newImposterIds
             }));
 
         } catch (e) {

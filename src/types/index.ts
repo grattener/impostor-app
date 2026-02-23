@@ -45,6 +45,7 @@ export interface GameState {
   maxRounds: number | null;
   winner: 'CITIZENS' | 'IMPOSTERS' | null;
   settings: GameSettings;
+  lastImposterIds: string[];
 }
 
 export interface GeminiWordResponse {
